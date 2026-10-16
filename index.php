@@ -11,7 +11,6 @@ if (!isset($_SESSION['id_peminjam']) || $_SESSION['role'] != 'peminjam') {
 }
 
 $id_peminjam_aktif = $_SESSION['id_peminjam'];
-$nama_peminjam_aktif = isset($_SESSION['nama_peminjam']) ? $_SESSION['nama_peminjam'] : 'Peminjam';
 
 // Proses Simpan Peminjaman
 if (isset($_POST['submit_pinjam'])) {
@@ -29,7 +28,7 @@ if (isset($_POST['submit_pinjam'])) {
     // Update data nama_peminjam, jenis_peminjam, dan kelas ke tabel peminjam
     mysqli_query($koneksi, "UPDATE peminjam SET nama_peminjam = '$nama_peminjam', jenis_peminjam = '$jenis_peminjam', kelas = '$kelas' WHERE id_peminjam = '$id_peminjam_aktif'");
 
-    // Update session nama jika nama diubah
+    // Update session nama
     $_SESSION['nama_peminjam'] = $nama_peminjam;
 
     // Simpan Data Peminjaman Utama
@@ -53,12 +52,11 @@ if (isset($_POST['submit_pinjam'])) {
 // Ambil Data Kategori
 $data_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_kategori ASC");
 
-// Ambil data peminjam aktif untuk mengisi default input
-$q_peminjam = mysqli_query($koneksi, "SELECT * FROM peminjam WHERE id_peminjam = '$id_peminjam_aktif'");
-$d_peminjam = mysqli_fetch_assoc($q_peminjam);
-$default_nama  = isset($d_peminjam['nama_peminjam']) ? $d_peminjam['nama_peminjam'] : $nama_peminjam_aktif;
-$default_jenis = isset($d_peminjam['jenis_peminjam']) ? $d_peminjam['jenis_peminjam'] : 'Siswa';
-$default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
+// Sengaja dikosongkan agar navbar & modal form bersih dari nama lama
+$nama_peminjam_aktif = '';
+$default_nama  = '';
+$default_jenis = 'Siswa';
+$default_kelas = '';
 ?>
 
 <!DOCTYPE html>
@@ -93,7 +91,7 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-chocolate">Sarpras Sekolah</h1>
-                    <p class="text-xs text-rosegold-600">Halo, <b><?= htmlspecialchars($nama_peminjam_aktif); ?></b></p>
+                    <p class="text-xs text-rosegold-600">Silakan pilih alat untuk meminjam</p>
                 </div>
             </div>
             
@@ -124,6 +122,7 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
 
     <!-- Katalog Alat Dikelompokkan Per Kategori -->
     <main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+        <?>
         <?php 
         $ada_alat_total = false;
         while ($kat = mysqli_fetch_assoc($data_kategori)) :
@@ -203,39 +202,39 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
                     <p class="font-bold text-rosegold-600 text-base" id="modal_nama_alat">-</p>
                 </div>
 
-                <!-- Input Nama Peminjam -->
+                <!-- Input Nama Peminjam (Dipastikan Kosong) -->
                 <div>
                     <label class="block text-xs font-semibold text-chocolate/80 mb-1">Nama Peminjam</label>
-                    <input type="text" name="nama_peminjam" value="<?= htmlspecialchars($default_nama); ?>" placeholder="Masukkan nama lengkap" required
+                    <input type="text" name="nama_peminjam" id="input_nama_peminjam" value="" placeholder="Masukkan nama lengkap" required
                            class="w-full px-4 py-2.5 rounded-xl border border-cream-200 focus:outline-none focus:border-rosegold-400 bg-cream-50 text-sm">
                 </div>
 
-                <!-- Status Peminjam (Radio Button / Tombol Lingkaran) -->
+                <!-- Status Peminjam -->
                 <div>
                     <label class="block text-xs font-semibold text-chocolate/80 mb-2">Status Peminjam</label>
                     <div class="flex items-center space-x-6 bg-cream-50 px-4 py-2.5 rounded-xl border border-cream-200">
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="jenis_peminjam" value="Siswa" id="radio_siswa" <?= ($default_jenis == 'Siswa') ? 'checked' : ''; ?> onchange="toggleKelas()" class="accent-rosegold-500 w-4 h-4">
+                            <input type="radio" name="jenis_peminjam" value="Siswa" id="radio_siswa" checked onchange="toggleKelas()" class="accent-rosegold-500 w-4 h-4">
                             <span class="text-sm font-medium text-chocolate">Siswa</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="jenis_peminjam" value="Guru" id="radio_guru" <?= ($default_jenis == 'Guru') ? 'checked' : ''; ?> onchange="toggleKelas()" class="accent-rosegold-500 w-4 h-4">
+                            <input type="radio" name="jenis_peminjam" value="Guru" id="radio_guru" onchange="toggleKelas()" class="accent-rosegold-500 w-4 h-4">
                             <span class="text-sm font-medium text-chocolate">Guru</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Input Kelas (Hanya muncul jika Siswa dipilih) -->
+                <!-- Input Kelas -->
                 <div id="wrapper_kelas">
                     <label class="block text-xs font-semibold text-chocolate/80 mb-1">Nama Kelas</label>
-                    <input type="text" name="kelas" id="input_kelas" value="<?= htmlspecialchars($default_kelas); ?>" placeholder="Contoh: XI RPL 1" 
+                    <input type="text" name="kelas" id="input_kelas" value="" placeholder
                            class="w-full px-4 py-2.5 rounded-xl border border-cream-200 focus:outline-none focus:border-rosegold-400 bg-cream-50 text-sm">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-chocolate/80 mb-1">Jumlah Pinjam</label>
-                        <input type="number" name="jumlah_pinjam" id="modal_jumlah" min="1" value="1" required 
+                        <input type="text" name="jumlah_pinjam" id="modal_jumlah" min="1" value="1" required 
                                class="w-full px-4 py-2.5 rounded-xl border border-cream-200 focus:outline-none focus:border-rosegold-400 bg-cream-50 text-sm">
                     </div>
                     <div>
@@ -266,7 +265,7 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
 
                 <div>
                     <label class="block text-xs font-semibold text-chocolate/80 mb-1">Tujuan / Keperluan</label>
-                    <textarea name="tujuan" rows="2" placeholder="Contoh: Untuk praktik mapel" required 
+                    <textarea name="tujuan" rows="2" placeholder required 
                               class="w-full px-4 py-2.5 rounded-xl border border-cream-200 focus:outline-none focus:border-rosegold-400 bg-cream-50 text-sm"></textarea>
                 </div>
 
@@ -294,19 +293,24 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
             } else {
                 wrapperKelas.style.display = 'none';
                 inputKelas.required = false;
-                inputKelas.value = ''; // Kosongkan jika guru
+                inputKelas.value = ''; 
             }
         }
 
-        // Jalankan saat halaman dimuat
         window.addEventListener('DOMContentLoaded', toggleKelas);
 
         function bukaModal(id, nama, stokMaksimal) {
             document.getElementById('modal_id_alat').value = id;
             document.getElementById('modal_nama_alat').innerText = nama;
+            
+            // Kosongkan form input nama dan kelas setiap kali modal dibuka
+            document.getElementById('input_nama_peminjam').value = '';
+            document.getElementById('input_kelas').value = '';
+
             const inputJumlah = document.getElementById('modal_jumlah');
             inputJumlah.max = stokMaksimal;
             inputJumlah.value = 1;
+
             document.getElementById('modalPinjam').classList.remove('hidden');
             document.getElementById('modalPinjam').classList.add('flex');
         }

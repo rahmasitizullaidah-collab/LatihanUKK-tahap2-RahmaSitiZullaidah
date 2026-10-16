@@ -106,7 +106,7 @@ $data_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_ka
 
             <div>
                 <label class="block text-xs font-semibold text-chocolate/80 mb-1">Jumlah Stok (Unit)</label>
-                <input type="number" name="jumlah" value="<?= $data['jumlah']; ?>" required min="0" 
+                <input type="text" name="jumlah" value="<?= $data['jumlah']; ?>" required min="0" 
                        class="w-full px-4 py-2.5 rounded-xl border border-cream-200 focus:outline-none focus:border-chocolate bg-cream-50 text-sm">
             </div>
 
