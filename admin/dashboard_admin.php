@@ -10,6 +10,15 @@ if (!isset($_SESSION['id_admin']) || $_SESSION['role'] != 'admin') {
 
 $error = "";
 
+// --- FUNGSI PENCATATAN LOG AKTIVITAS ---
+function catatLog($koneksi, $id_admin, $aktivitas) {
+    $id_admin_val = $id_admin ? "'$id_admin'" : "NULL";
+    $aktivitas = mysqli_real_escape_string($koneksi, $aktivitas);
+    
+    $q_log = "INSERT INTO log_aktivitas (id_admin, aktivitas) VALUES ($id_admin_val, '$aktivitas')";
+    mysqli_query($koneksi, $q_log);
+}
+
 // --- 1. PROSES CRUD BARANG (ALAT) ---
 if (isset($_POST['aksi_barang'])) {
     $aksi = $_POST['aksi_barang'];
@@ -22,6 +31,7 @@ if (isset($_POST['aksi_barang'])) {
 
         $query = "INSERT INTO alat (kode_alat, nama_alat, id_kategori, jumlah) VALUES ('$kode_alat', '$nama_alat', '$id_kategori', '$jumlah')";
         if (mysqli_query($koneksi, $query)) {
+            catatLog($koneksi, $_SESSION['id_admin'], "Menambahkan alat baru: $nama_alat ($kode_alat)");
             echo "<script>alert('Alat berhasil ditambahkan!'); window.location='dashboard_admin.php';</script>";
             exit;
         } else {
@@ -36,6 +46,7 @@ if (isset($_POST['aksi_barang'])) {
 
         $query = "UPDATE alat SET kode_alat = '$kode_alat', nama_alat = '$nama_alat', id_kategori = '$id_kategori', jumlah = '$jumlah' WHERE id_alat = '$id_alat'";
         if (mysqli_query($koneksi, $query)) {
+            catatLog($koneksi, $_SESSION['id_admin'], "Memperbarui data alat: $nama_alat ($kode_alat)");
             echo "<script>alert('Alat berhasil diperbarui!'); window.location='dashboard_admin.php';</script>";
             exit;
         } else {
@@ -46,7 +57,13 @@ if (isset($_POST['aksi_barang'])) {
 
 if (isset($_GET['hapus_alat'])) {
     $id_alat = (int)$_GET['hapus_alat'];
+    // Ambil nama alat untuk log sebelum dihapus
+    $get_nama = mysqli_query($koneksi, "SELECT nama_alat FROM alat WHERE id_alat = '$id_alat'");
+    $row_nama = mysqli_fetch_assoc($get_nama);
+    $nama_dihapus = $row_nama['nama_alat'] ?? 'ID: ' . $id_alat;
+
     mysqli_query($koneksi, "DELETE FROM alat WHERE id_alat = '$id_alat'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Menghapus alat: $nama_dihapus");
     echo "<script>alert('Alat berhasil dihapus!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -58,11 +75,13 @@ if (isset($_POST['aksi_kategori'])) {
 
     if ($aksi_kat == 'tambah') {
         mysqli_query($koneksi, "INSERT INTO kategori (nama_kategori) VALUES ('$nama_kategori')");
+        catatLog($koneksi, $_SESSION['id_admin'], "Menambahkan kategori baru: $nama_kategori");
         echo "<script>alert('Kategori berhasil ditambahkan!'); window.location='dashboard_admin.php';</script>";
         exit;
     } elseif ($aksi_kat == 'edit') {
         $id_kategori = (int)$_POST['id_kategori'];
         mysqli_query($koneksi, "UPDATE kategori SET nama_kategori = '$nama_kategori' WHERE id_kategori = '$id_kategori'");
+        catatLog($koneksi, $_SESSION['id_admin'], "Memperbarui kategori menjadi: $nama_kategori");
         echo "<script>alert('Kategori berhasil diperbarui!'); window.location='dashboard_admin.php';</script>";
         exit;
     }
@@ -70,7 +89,12 @@ if (isset($_POST['aksi_kategori'])) {
 
 if (isset($_GET['hapus_kategori'])) {
     $id_kat = (int)$_GET['hapus_kategori'];
+    $get_kat = mysqli_query($koneksi, "SELECT nama_kategori FROM kategori WHERE id_kategori = '$id_kat'");
+    $row_kat = mysqli_fetch_assoc($get_kat);
+    $nama_kat_dihapus = $row_kat['nama_kategori'] ?? 'ID: ' . $id_kat;
+
     mysqli_query($koneksi, "DELETE FROM kategori WHERE id_kategori = '$id_kat'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Menghapus kategori: $nama_kat_dihapus");
     echo "<script>alert('Kategori berhasil dihapus!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -84,12 +108,12 @@ if (isset($_POST['aksi_user'])) {
     if ($aksi_user == 'tambah') {
         $password = md5($_POST['password']);
         mysqli_query($koneksi, "INSERT INTO petugas (nama_petugas, username, password) VALUES ('$nama_petugas', '$username', '$password')");
+        catatLog($koneksi, $_SESSION['id_admin'], "Menambahkan petugas baru: $nama_petugas ($username)");
         echo "<script>alert('Petugas berhasil ditambahkan!'); window.location='dashboard_admin.php';</script>";
         exit;
     } elseif ($aksi_user == 'edit') {
         $id_petugas = (int)$_POST['id_petugas'];
         
-        // Cek apakah password diisi/diubah
         if (!empty($_POST['password'])) {
             $password = md5($_POST['password']);
             $query_user = "UPDATE petugas SET nama_petugas = '$nama_petugas', username = '$username', password = '$password' WHERE id_petugas = '$id_petugas'";
@@ -98,6 +122,7 @@ if (isset($_POST['aksi_user'])) {
         }
 
         if (mysqli_query($koneksi, $query_user)) {
+            catatLog($koneksi, $_SESSION['id_admin'], "Memperbarui data petugas: $nama_petugas");
             echo "<script>alert('Data petugas berhasil diperbarui!'); window.location='dashboard_admin.php';</script>";
             exit;
         } else {
@@ -108,7 +133,12 @@ if (isset($_POST['aksi_user'])) {
 
 if (isset($_GET['hapus_petugas'])) {
     $id_petugas = (int)$_GET['hapus_petugas'];
+    $get_ptg = mysqli_query($koneksi, "SELECT nama_petugas FROM petugas WHERE id_petugas = '$id_petugas'");
+    $row_ptg = mysqli_fetch_assoc($get_ptg);
+    $nama_ptg_dihapus = $row_ptg['nama_petugas'] ?? 'ID: ' . $id_petugas;
+
     mysqli_query($koneksi, "DELETE FROM petugas WHERE id_petugas = '$id_petugas'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Menghapus petugas: $nama_ptg_dihapus");
     echo "<script>alert('Petugas berhasil dihapus!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -119,6 +149,7 @@ if (isset($_GET['aksi_pinjam']) && isset($_GET['id'])) {
     $status_baru = ($_GET['aksi_pinjam'] == 'setujui') ? 'Disetujui' : 'Ditolak';
 
     mysqli_query($koneksi, "UPDATE peminjaman SET status = '$status_baru' WHERE id_peminjaman = '$id_peminjaman'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Mengubah status peminjaman ID #$id_peminjaman menjadi $status_baru");
     echo "<script>alert('Status peminjaman diubah menjadi {$status_baru}!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -126,6 +157,7 @@ if (isset($_GET['aksi_pinjam']) && isset($_GET['id'])) {
 if (isset($_GET['aksi_kembali']) && isset($_GET['id'])) {
     $id_peminjaman = (int)$_GET['id'];
     mysqli_query($koneksi, "UPDATE peminjaman SET status = 'Selesai' WHERE id_peminjaman = '$id_peminjaman'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Mencatat pengembalian selesai untuk peminjaman ID #$id_peminjaman");
     echo "<script>alert('Status pengembalian dicatat Selesai!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -134,6 +166,7 @@ if (isset($_GET['hapus_peminjaman'])) {
     $id_peminjaman = (int)$_GET['hapus_peminjaman'];
     mysqli_query($koneksi, "DELETE FROM detail_peminjaman WHERE id_peminjaman = '$id_peminjaman'");
     mysqli_query($koneksi, "DELETE FROM peminjaman WHERE id_peminjaman = '$id_peminjaman'");
+    catatLog($koneksi, $_SESSION['id_admin'], "Menghapus riwayat transaksi peminjaman ID #$id_peminjaman");
     echo "<script>alert('Data transaksi berhasil dihapus!'); window.location='dashboard_admin.php';</script>";
     exit;
 }
@@ -187,9 +220,16 @@ $data_peminjaman = mysqli_query($koneksi, "
                     <p class="text-xs text-rosegold-300">Panel Utama Manajemen Fitur Lengkap Admin</p>
                 </div>
             </div>
-            <a href="logout.php" onclick="return confirm('Yakin ingin keluar dari sistem?');" class="text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl transition shadow-sm">
-                Logout Admin
-            </a>
+
+            <!-- Tombol Aksi di Samping Kanan (Log Aktivitas & Logout) -->
+            <div class="flex items-center gap-3">
+                <a href="log_aktivitas.php" class="text-xs font-semibold bg-rosegold-500 hover:bg-rosegold-600 text-white px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-1.5">
+                    📜 <span>Log Aktivitas</span>
+                </a>
+                <a href="logout.php" onclick="return confirm('Yakin ingin keluar dari sistem?');" class="text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl transition shadow-sm">
+                    Logout Admin
+                </a>
+            </div>
         </div>
     </header>
 

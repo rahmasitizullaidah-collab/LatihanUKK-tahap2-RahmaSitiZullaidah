@@ -318,7 +318,3 @@ $default_kelas = isset($d_peminjam['kelas']) ? $d_peminjam['kelas'] : '';
     </script>
 </body>
 </html>
-```<FollowUp>
-<key>peminjam_form_updates</key>
-<suggestion>Apakah Anda ingin menambahkan validasi khusus pada input nama atau kelas, atau ingin menambahkan field tambahan pada form peminjaman?</suggestion>
-</FollowUp>
